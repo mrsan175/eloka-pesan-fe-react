@@ -9,3 +9,5 @@ export { default as ProfilePage } from './Profile';
 export { default as LoginPage } from './Login';
 export { default as RegisterPage } from './Register';
 export { default as SearchPage } from './Search';
+export { default as TableEntryPage } from './TableEntry';
+export { default as MapPage } from './MapPage';

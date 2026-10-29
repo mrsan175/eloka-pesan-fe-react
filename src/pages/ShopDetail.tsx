@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Star,
   MapPin,
@@ -10,20 +10,23 @@ import {
   Search,
   X,
   Navigation,
-  Ruler,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
-import { Layout } from '@/components/layout';
-import { Card, Spinner, Badge, Button } from '@/components/ui';
-import { ProductCard } from '@/components/product';
-import OutletMap from '@/components/map/OutletMap';
-import { shopsApi, productsApi } from '@/lib/api';
-import { formatCurrency, isShopOpen, calculateDistance, formatDistance } from '@/lib/utils';
-import { useCartStore } from '@/stores';
-import { requestGeolocation, useGeolocationStore } from '@/stores/geolocation';
-import { toast } from 'sonner';
-import type { Shop, Product, Category } from '@/types';
+  RefreshCcw,
+} from "lucide-react";
+import { Layout } from "@/components/layout";
+import { Card, Spinner, Badge, Button } from "@/components/ui";
+import { ProductCard } from "@/components/product";
+import { shopsApi, productsApi } from "@/lib/api";
+import {
+  formatCurrency,
+  isShopOpen,
+  calculateDistance,
+  formatDistance,
+} from "@/lib/utils";
+import { useCartStore } from "@/stores";
+import { requestGeolocation, useGeolocationStore } from "@/stores/geolocation";
+import { toast } from "sonner";
+import { reverseGeocode } from "@/lib/reverseGeocode";
+import type { Shop, Product, Category } from "@/types";
 
 const ShopDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,17 +35,38 @@ const ShopDetailPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [distance, setDistance] = useState<number | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [editingLocation, setEditingLocation] = useState(false);
-  const { latitude: userLatitude, longitude: userLongitude, setManualLocation } = useGeolocationStore();
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
+  const { latitude: userLatitude, longitude: userLongitude } =
+    useGeolocationStore();
   const userLocation =
     userLatitude !== null && userLongitude !== null
       ? { latitude: userLatitude, longitude: userLongitude }
       : null;
+
+  useEffect(() => {
+    if (!userLocation) {
+      setLocationLabel(null);
+      return;
+    }
+    const controller = new AbortController();
+    reverseGeocode(
+      userLocation.latitude,
+      userLocation.longitude,
+      controller.signal,
+    )
+      .then(setLocationLabel)
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
+        console.warn("Reverse geocoding unavailable:", error);
+        setLocationLabel(null);
+      });
+    return () => controller.abort();
+  }, [userLatitude, userLongitude]);
 
   // Refs for scroll and sticky behavior
   const stickyBarRef = useRef<HTMLDivElement | null>(null);
@@ -76,9 +100,9 @@ const ShopDetailPage = () => {
       // Always fetch products via productsApi to guarantee full variants and addons
       await fetchProducts(shopId);
     } catch (error) {
-      toast.error('Gagal memuat data outlet');
+      toast.error("Gagal memuat data outlet");
       console.error(error);
-      navigate('/');
+      navigate("/");
     } finally {
       setLoading(false);
     }
@@ -119,7 +143,7 @@ const ShopDetailPage = () => {
         }
       }
     } catch (error) {
-      toast.error('Gagal memuat produk');
+      toast.error("Gagal memuat produk");
       console.error(error);
       setProducts([]);
     }
@@ -132,12 +156,14 @@ const ShopDetailPage = () => {
     try {
       const granted = await requestGeolocation();
       if (!granted) {
-        toast.error('Lokasi belum tersedia. Izinkan akses lokasi dari browser Anda.');
+        toast.error(
+          "Lokasi belum tersedia. Izinkan akses lokasi dari browser Anda.",
+        );
       }
     } catch (error) {
-      console.warn('Location unavailable:', error);
+      console.warn("Location unavailable:", error);
       toast.error(
-        error instanceof Error ? error.message : 'Gagal mendapatkan lokasi'
+        error instanceof Error ? error.message : "Gagal mendapatkan lokasi",
       );
     } finally {
       setIsLoadingLocation(false);
@@ -155,8 +181,8 @@ const ShopDetailPage = () => {
         userLocation.latitude,
         userLocation.longitude,
         shop.latitude,
-        shop.longitude
-      )
+        shop.longitude,
+      ),
     );
   }, [shop?.id, userLocation]);
 
@@ -167,15 +193,15 @@ const ShopDetailPage = () => {
       ? products.filter(
           (p) =>
             p.name.toLowerCase().includes(q) ||
-            (p.description && p.description.toLowerCase().includes(q))
+            (p.description && p.description.toLowerCase().includes(q)),
         )
       : products;
 
     if (categories.length === 0) {
       return [
         {
-          id: 'all',
-          name: 'Semua Menu',
+          id: "all",
+          name: "Semua Menu",
           products: filtered,
         },
       ];
@@ -185,21 +211,23 @@ const ShopDetailPage = () => {
       id: cat.id,
       name: cat.name,
       products: filtered.filter(
-        (p) => p.categoryId === cat.id || p.category?.id === cat.id
+        (p) => p.categoryId === cat.id || p.category?.id === cat.id,
       ),
     }));
 
     // Find any products without category or matching any listed category
     const categorizedProductIds = new Set(
-      list.flatMap((c) => c.products.map((p) => p.id))
+      list.flatMap((c) => c.products.map((p) => p.id)),
     );
-    const uncategorized = filtered.filter((p) => !categorizedProductIds.has(p.id));
+    const uncategorized = filtered.filter(
+      (p) => !categorizedProductIds.has(p.id),
+    );
 
     const result = list.filter((c) => c.products.length > 0);
     if (uncategorized.length > 0) {
       result.push({
-        id: 'other',
-        name: 'Menu Lainnya',
+        id: "other",
+        name: "Menu Lainnya",
         products: uncategorized,
       });
     }
@@ -209,7 +237,15 @@ const ShopDetailPage = () => {
 
   // Set default active category on load
   useEffect(() => {
-    if (groupedCategories.length > 0 && !activeCategoryId) {
+    if (groupedCategories.length === 0) {
+      setActiveCategoryId(null);
+      return;
+    }
+
+    const activeCategoryStillExists = groupedCategories.some(
+      (category) => category.id === activeCategoryId,
+    );
+    if (!activeCategoryStillExists) {
       setActiveCategoryId(groupedCategories[0].id);
     }
   }, [groupedCategories, activeCategoryId]);
@@ -218,7 +254,7 @@ const ShopDetailPage = () => {
   const scrollCategoryPillIntoView = (catId: string) => {
     if (!categoriesBarRef.current) return;
     const pill = categoriesBarRef.current.querySelector(
-      `[data-category-id="${catId}"]`
+      `[data-category-id="${catId}"]`,
     ) as HTMLElement | null;
 
     if (pill) {
@@ -229,7 +265,7 @@ const ShopDetailPage = () => {
 
       container.scrollTo({
         left: pillLeft - containerWidth / 2 + pillWidth / 2,
-        behavior: 'smooth',
+        behavior: "smooth",
       });
     }
   };
@@ -283,9 +319,9 @@ const ShopDetailPage = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [groupedCategories, activeCategoryId, searchQuery]);
 
@@ -307,7 +343,7 @@ const ShopDetailPage = () => {
 
       window.scrollTo({
         top: Math.max(0, targetScrollY),
-        behavior: 'smooth',
+        behavior: "smooth",
       });
 
       setTimeout(() => {
@@ -331,7 +367,7 @@ const ShopDetailPage = () => {
       <Layout showBottomNav={false} showHeader>
         <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
           <p className="text-secondary-500 mb-4">Outlet tidak ditemukan</p>
-          <Button onClick={() => navigate('/')}>Kembali ke Beranda</Button>
+          <Button onClick={() => navigate("/")}>Kembali ke Beranda</Button>
         </div>
       </Layout>
     );
@@ -355,7 +391,7 @@ const ShopDetailPage = () => {
           <img
             src={
               shop.logoUrl ||
-              'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1000&auto=format&fit=crop&q=70'
+              "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1000&auto=format&fit=crop&q=70"
             }
             alt={shop.name}
             className="w-full h-full object-cover"
@@ -380,7 +416,8 @@ const ShopDetailPage = () => {
                   {shop.name}
                 </h1>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  {shop.description || 'Pilihan hidangan terbaik untuk hari Anda'}
+                  {shop.description ||
+                    "Pilihan hidangan terbaik untuk hari Anda"}
                 </p>
               </div>
 
@@ -419,18 +456,9 @@ const ShopDetailPage = () => {
               <div className="pt-3 border-t border-slate-100 space-y-3">
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (editingLocation) {
-                      setEditingLocation(false);
-                      setShowMap(false);
-                      return;
-                    }
-                    if (!userLocation) {
-                      await requestLocation();
-                    }
-                    setEditingLocation(true);
-                    setShowMap(true);
-                  }}
+                  onClick={() =>
+                    navigate(`/map?shopId=${shop.id}&edit=location`)
+                  }
                   disabled={isLoadingLocation}
                   className="w-full flex items-center gap-3 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-left disabled:opacity-60"
                 >
@@ -441,50 +469,54 @@ const ShopDetailPage = () => {
                     </span>
                     <span className="block truncate text-xs font-medium text-slate-700">
                       {userLocation
-                        ? `${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`
-                        : 'Aktifkan lokasi untuk melihat posisi Anda'}
+                        ? locationLabel || "Mencari alamat..."
+                        : "Aktifkan lokasi untuk melihat posisi Anda"}
                     </span>
                   </span>
-                <span className="text-[10px] font-semibold text-primary-600">
-                  {editingLocation ? 'Selesai' : 'Perbaiki'}
-                </span>
+                  <ArrowRight
+                    size={17}
+                    className="text-primary-600 flex-shrink-0"
+                  />
                 </button>
-                {editingLocation && (
-                <div className="rounded-xl border border-primary-100 bg-primary-50 px-3 py-2 text-xs text-primary-700">
-                  Geser pin biru atau ketuk titik baru pada peta untuk memperbaiki lokasi Anda.
-                  <button type="button" onClick={requestLocation} className="ml-1 font-bold underline">
-                    Gunakan GPS
-                  </button>
-                </div>
-                )}
 
-                {/* Distance Info */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-primary-50 border border-primary-200/60 flex items-center justify-center">
-                      <Navigation size={15} className="text-primary-600" />
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-slate-500 font-medium block">
-                        Jarak dari lokasi Anda
+                <button
+                  type="button"
+                  onClick={() => navigate(`/map?shopId=${shop.id}`)}
+                  className="w-full flex items-center gap-3 rounded-xl bg-white border border-slate-200 px-3 py-2.5 text-left"
+                >
+                  <MapPin size={17} className="text-primary-600" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                      Lokasi Outlet
+                    </span>
+                    <span className="block truncate text-xs font-medium text-slate-700">
+                      {shop.address}
+                    </span>
+                  </span>
+                  <ArrowRight
+                    size={17}
+                    className="text-primary-600 flex-shrink-0"
+                  />
+                </button>
+
+                {/* Compact distance info */}
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="flex items-center gap-1.5 text-slate-500">
+                    <Navigation size={13} className="text-primary-600" />
+                    {distance != null ? (
+                      <span>
+                        <span className="font-medium">Jarak</span>{" "}
+                        {formatDistance(distance)}
                       </span>
-                      {distance != null ? (
-                        <span className="text-sm font-bold text-slate-900">
-                          {formatDistance(distance)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-400">
-                          Aktifkan lokasi untuk melihat jarak
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
+                    ) : (
+                      <span>Jarak belum tersedia</span>
+                    )}
+                  </span>
                   <button
                     type="button"
                     onClick={requestLocation}
                     disabled={isLoadingLocation}
-                    className="text-[11px] font-bold text-primary-600 hover:text-primary-700 px-3 py-1.5 rounded-lg hover:bg-primary-50 transition-colors disabled:opacity-50"
+                    className="text-[11px] font-bold text-primary-600 hover:text-primary-700 whitespace-nowrap disabled:opacity-50"
                   >
                     {isLoadingLocation ? (
                       <span className="flex items-center gap-1.5">
@@ -493,7 +525,7 @@ const ShopDetailPage = () => {
                       </span>
                     ) : userLocation ? (
                       <span className="flex items-center gap-1">
-                        <Ruler size={12} />
+                        <RefreshCcw size={12} />
                         <span>Perbarui Lokasi</span>
                       </span>
                     ) : (
@@ -503,37 +535,6 @@ const ShopDetailPage = () => {
                       </span>
                     )}
                   </button>
-                </div>
-
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowMap((value) => !value)}
-                    className="w-full flex items-center gap-3 rounded-xl bg-white border border-slate-200 px-3 py-2.5 text-left"
-                  >
-                    <MapPin size={17} className="text-primary-600" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                        Lokasi Outlet
-                      </span>
-                      <span className="block truncate text-xs font-medium text-slate-700">
-                        {showMap ? 'Sembunyikan peta outlet' : shop.address}
-                      </span>
-                    </span>
-                    {showMap ? <ChevronUp size={17} className="text-slate-400" /> : <ChevronDown size={17} className="text-slate-400" />}
-                  </button>
-                  {showMap && (
-                    <OutletMap
-                      shops={[shop]}
-                      userLocation={userLocation}
-                      editableUserLocation={editingLocation}
-                      onUserLocationChange={({ latitude: nextLatitude, longitude: nextLongitude }) =>
-                        setManualLocation(nextLatitude, nextLongitude)
-                      }
-                      focusShop={shop}
-                      height={220}
-                    />
-                  )}
                 </div>
               </div>
             )}
@@ -562,7 +563,7 @@ const ShopDetailPage = () => {
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => setSearchQuery("")}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-500 transition-colors"
                   aria-label="Hapus pencarian"
                 >
@@ -572,7 +573,7 @@ const ShopDetailPage = () => {
             </div>
 
             {/* Categories Horizontal Pills */}
-            {groupedCategories.length > 1 && !searchQuery && (
+            {groupedCategories.length > 0 && !searchQuery && (
               <div
                 ref={categoriesBarRef}
                 className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth py-0.5"
@@ -585,8 +586,8 @@ const ShopDetailPage = () => {
                     onClick={() => scrollToCategory(category.id)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 ${
                       activeCategoryId === category.id
-                        ? 'bg-slate-900 text-white shadow-xs scale-105'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
+                        ? "bg-slate-900 text-white shadow-xs scale-105"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
                     }`}
                   >
                     {category.name}
@@ -600,21 +601,21 @@ const ShopDetailPage = () => {
         {/* Menu Items Content */}
         <div
           className={`max-w-xl mx-auto px-4 mt-4 space-y-6 ${
-            isCurrentShopCart ? 'pb-28' : 'pb-10'
+            isCurrentShopCart ? "pb-28" : "pb-10"
           }`}
         >
           {/* Active Search Result Notification */}
           {searchQuery && (
             <div className="flex items-center justify-between px-1">
               <span className="text-xs text-slate-500">
-                Menampilkan hasil untuk{' '}
+                Menampilkan hasil untuk{" "}
                 <span className="font-bold text-slate-900">
                   "{searchQuery}"
                 </span>
               </span>
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => setSearchQuery("")}
                 className="text-xs text-primary-600 font-semibold hover:underline"
               >
                 Reset
@@ -655,12 +656,12 @@ const ShopDetailPage = () => {
               <p className="text-sm font-semibold text-slate-700">
                 {searchQuery
                   ? `Tidak ada menu yang cocok dengan "${searchQuery}"`
-                  : 'Belum ada menu tersedia di outlet ini'}
+                  : "Belum ada menu tersedia di outlet ini"}
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 {searchQuery
-                  ? 'Coba gunakan kata kunci lainnya'
-                  : 'Silakan cek kembali beberapa saat lagi'}
+                  ? "Coba gunakan kata kunci lainnya"
+                  : "Silakan cek kembali beberapa saat lagi"}
               </p>
             </Card>
           )}
@@ -672,7 +673,7 @@ const ShopDetailPage = () => {
             <div className="max-w-xl mx-auto bg-white/95 backdrop-blur-md border border-slate-200/90 p-3 sm:p-3.5 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] flex items-center justify-between gap-3 pointer-events-auto">
               <button
                 type="button"
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate("/checkout")}
                 className="flex items-center gap-3 flex-1 min-w-0 text-left"
               >
                 <div className="w-11 h-11 rounded-2xl bg-primary-50 text-primary-600 border border-primary-200/60 flex items-center justify-center relative flex-shrink-0">
@@ -692,7 +693,7 @@ const ShopDetailPage = () => {
               </button>
 
               <Button
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate("/checkout")}
                 size="md"
                 className="rounded-xl px-5 sm:px-6 h-11 text-xs sm:text-sm font-bold shadow-md shadow-primary-500/25 flex-shrink-0"
                 rightIcon={<ArrowRight size={16} />}

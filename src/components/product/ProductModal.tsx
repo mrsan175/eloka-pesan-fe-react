@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Minus, Plus, Check } from 'lucide-react';
-import { BottomSheet, Button } from '@/components/ui';
-import { formatCurrency } from '@/lib/utils';
-import { useCartStore } from '@/stores';
-import type { Product, CartItem, CartItemVariant, CartItemAddon } from '@/types';
+import { useState, useEffect } from "react";
+import { Minus, Plus, Check } from "lucide-react";
+import { BottomSheet, Button } from "@/components/ui";
+import { formatCurrency } from "@/lib/utils";
+import { useCartStore } from "@/stores";
+import type {
+  Product,
+  CartItem,
+  CartItemVariant,
+  CartItemAddon,
+} from "@/types";
 
 interface ProductModalProps {
   product: Product;
@@ -16,7 +21,7 @@ interface ProductModalProps {
     quantity: number,
     variants: CartItemVariant[],
     addons: CartItemAddon[],
-    notes: string
+    notes: string,
   ) => void;
 }
 
@@ -29,9 +34,11 @@ const ProductModal = ({
   onSaveEdit,
 }: ProductModalProps) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariants, setSelectedVariants] = useState<CartItemVariant[]>([]);
+  const [selectedVariants, setSelectedVariants] = useState<CartItemVariant[]>(
+    [],
+  );
   const [selectedAddons, setSelectedAddons] = useState<CartItemAddon[]>([]);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   const addItem = useCartStore((state) => state.addItem);
 
@@ -42,24 +49,27 @@ const ProductModal = ({
         setQuantity(editItem.quantity);
         setSelectedVariants(editItem.variants || []);
         setSelectedAddons(editItem.addons || []);
-        setNotes(editItem.notes || '');
+        setNotes(editItem.notes || "");
       } else {
         setQuantity(1);
         setSelectedVariants([]);
         setSelectedAddons([]);
-        setNotes('');
+        setNotes("");
       }
     }
   }, [isOpen, editItem]);
 
   // Group variants by name (e.g. Size: Small, Medium, Large)
-  const variantGroups = product.variants?.reduce((groups, variant) => {
-    if (!groups[variant.name]) {
-      groups[variant.name] = [];
-    }
-    groups[variant.name].push(variant);
-    return groups;
-  }, {} as Record<string, typeof product.variants>);
+  const variantGroups = product.variants?.reduce(
+    (groups, variant) => {
+      if (!groups[variant.name]) {
+        groups[variant.name] = [];
+      }
+      groups[variant.name].push(variant);
+      return groups;
+    },
+    {} as Record<string, typeof product.variants>,
+  );
 
   // Calculate total price
   const calculateTotal = () => {
@@ -78,7 +88,10 @@ const ProductModal = ({
     return total;
   };
 
-  const handleVariantChange = (groupName: string, variant: typeof product.variants[0]) => {
+  const handleVariantChange = (
+    groupName: string,
+    variant: (typeof product.variants)[0],
+  ) => {
     setSelectedVariants((prev) => {
       const filtered = prev.filter((v) => v.optionName !== groupName);
       return [
@@ -92,7 +105,7 @@ const ProductModal = ({
     });
   };
 
-  const handleAddonToggle = (addon: typeof product.addons[0]) => {
+  const handleAddonToggle = (addon: (typeof product.addons)[0]) => {
     setSelectedAddons((prev) => {
       const exists = prev.find((a) => a.addonId === addon.id);
       if (exists) {
@@ -110,27 +123,25 @@ const ProductModal = ({
     });
   };
 
-  const handleAddonQty = (e: React.MouseEvent, addonId: string, delta: number) => {
-    e.stopPropagation();
-    setSelectedAddons((prev) =>
-      prev
-        .map((a) => {
-          if (a.addonId === addonId) {
-            const nextQty = a.quantity + delta;
-            return nextQty > 0 ? { ...a, quantity: nextQty } : null;
-          }
-          return a;
-        })
-        .filter(Boolean) as CartItemAddon[]
-    );
-  };
-
   const handleSave = () => {
     if (editItem && onSaveEdit) {
-      onSaveEdit(editItem.id, quantity, selectedVariants, selectedAddons, notes);
+      onSaveEdit(
+        editItem.id,
+        quantity,
+        selectedVariants,
+        selectedAddons,
+        notes,
+      );
       onClose();
     } else {
-      addItem(product, quantity, selectedVariants, selectedAddons, notes, shopName);
+      addItem(
+        product,
+        quantity,
+        selectedVariants,
+        selectedAddons,
+        notes,
+        shopName,
+      );
       onClose();
     }
   };
@@ -141,37 +152,43 @@ const ProductModal = ({
       onClose={onClose}
       title={editItem ? `Ubah: ${product.name}` : product.name}
       footer={
-        <div className="flex items-center gap-3">
+        <div className="space-y-3 pb-3">
           {/* Stepper Quantity */}
-          <div className="flex items-center gap-2 bg-slate-100 rounded-2xl p-1.5 border border-slate-200 flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="w-8 h-8 rounded-xl bg-white text-slate-700 shadow-xs flex items-center justify-center hover:bg-slate-200 active:scale-95 transition-all"
-              aria-label="Kurang"
-            >
-              <Minus size={15} strokeWidth={2.5} />
-            </button>
-            <span className="w-6 text-center font-extrabold text-slate-900 text-sm">
-              {quantity}
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-bold text-slate-900">
+              Jumlah Pesanan
             </span>
-            <button
-              type="button"
-              onClick={() => setQuantity((q) => q + 1)}
-              className="w-8 h-8 rounded-xl bg-primary-500 text-white shadow-xs flex items-center justify-center hover:bg-primary-600 active:scale-95 transition-all"
-              aria-label="Tambah"
-            >
-              <Plus size={15} strokeWidth={2.5} />
-            </button>
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 p-1.5">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-slate-700 shadow-xs transition-all hover:bg-slate-200 active:scale-95"
+                aria-label="Kurang"
+              >
+                <Minus size={15} strokeWidth={2.5} />
+              </button>
+              <span className="min-w-7 text-center text-sm font-extrabold text-slate-900">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-500 text-white shadow-xs transition-all hover:bg-primary-600 active:scale-95"
+                aria-label="Tambah"
+              >
+                <Plus size={15} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
 
           {/* Action Button */}
           <Button
             onClick={handleSave}
             size="lg"
-            className="flex-1 h-12 rounded-2xl text-xs sm:text-sm font-extrabold shadow-md shadow-primary-500/25 flex items-center justify-between px-4 sm:px-5"
+            className="flex h-12 w-full items-center justify-center rounded-2xl px-4 text-lg font-extrabold shadow-md shadow-primary-500/25 sm:px-5"
           >
-            <span>{editItem ? 'Simpan Perubahan' : 'Tambah Pesanan'}</span>
+            <span>{editItem ? "Simpan Perubahan" : "Tambah Pesanan"}</span>
+            {"-"}
             <span>{formatCurrency(calculateTotal())}</span>
           </Button>
         </div>
@@ -182,7 +199,7 @@ const ProductModal = ({
         <img
           src={
             product.imageUrl ||
-            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60'
+            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60"
           }
           alt={product.name}
           className="w-24 h-24 rounded-2xl object-cover bg-slate-100 flex-shrink-0 shadow-xs"
@@ -192,7 +209,7 @@ const ProductModal = ({
             {formatCurrency(product.price)}
           </span>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 line-clamp-3 leading-relaxed">
-            {product.description || 'Pilihan menu lezat dan berkualitas'}
+            {product.description || "Pilihan menu lezat dan berkualitas"}
           </p>
         </div>
       </div>
@@ -207,7 +224,7 @@ const ProductModal = ({
             <div className="grid grid-cols-2 gap-2">
               {variants.map((v) => {
                 const isSelected = selectedVariants.some(
-                  (item) => item.variantId === v.id
+                  (item) => item.variantId === v.id,
                 );
                 return (
                   <button
@@ -216,8 +233,8 @@ const ProductModal = ({
                     onClick={() => handleVariantChange(groupName, v)}
                     className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all ${
                       isSelected
-                        ? 'border-primary-500 bg-primary-50/70 ring-2 ring-primary-500/20'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        ? "border-primary-500 bg-primary-50/70 ring-2 ring-primary-500/20"
+                        : "border-slate-200 hover:border-slate-300 bg-white"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-1">
@@ -225,7 +242,10 @@ const ProductModal = ({
                         {v.optionName}
                       </span>
                       {isSelected && (
-                        <Check size={14} className="text-primary-600 flex-shrink-0" />
+                        <Check
+                          size={14}
+                          className="text-primary-600 flex-shrink-0"
+                        />
                       )}
                     </div>
                     {parseFloat(v.priceAdjust) > 0 && (
@@ -240,22 +260,23 @@ const ProductModal = ({
           </div>
         ))}
 
-      {/* Addons Section (Extra Sugar, Extra Salad, etc.) */}
+      {/* Addons Section (each option can be selected once; multiple options are allowed) */}
       {product.addons && product.addons.length > 0 && (
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <label className="text-xs sm:text-sm font-bold text-slate-900">
               Tambahan / Topping (Opsional)
             </label>
-            <span className="text-[11px] text-slate-400">Bisa pilih lebih dari satu</span>
+            <span className="text-[11px] text-slate-400">
+              Pilih satu atau beberapa
+            </span>
           </div>
 
           <div className="space-y-2">
             {product.addons.map((addon) => {
-              const selectedAddon = selectedAddons.find(
-                (a) => a.addonId === addon.id
+              const isSelected = selectedAddons.some(
+                (a) => a.addonId === addon.id,
               );
-              const isSelected = !!selectedAddon;
 
               return (
                 <div
@@ -263,8 +284,8 @@ const ProductModal = ({
                   onClick={() => handleAddonToggle(addon)}
                   className={`w-full p-3 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${
                     isSelected
-                      ? 'border-primary-500 bg-primary-50/70'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                      ? "border-primary-500 bg-primary-50/70"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
                   }`}
                 >
                   <div className="min-w-0 flex-1">
@@ -276,35 +297,16 @@ const ProductModal = ({
                     </span>
                   </div>
 
-                  {/* Quantity Stepper for Addon if selected */}
-                  {isSelected ? (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1.5 bg-white rounded-full p-1 border border-primary-200 shadow-2xs flex-shrink-0"
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => handleAddonQty(e, addon.id, -1)}
-                        className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 active:scale-95"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="text-xs font-bold text-primary-700 min-w-[16px] text-center">
-                        {selectedAddon.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleAddonQty(e, addon.id, 1)}
-                        className="w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center hover:bg-primary-600 active:scale-95"
-                      >
-                        <Plus size={12} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-                      <Plus size={14} />
-                    </div>
-                  )}
+                  <span
+                    className={`w-6 h-6 rounded-md border flex items-center justify-center flex-shrink-0 ${
+                      isSelected
+                        ? "border-primary-500 bg-primary-500 text-white"
+                        : "border-slate-300 bg-white text-transparent"
+                    }`}
+                    aria-hidden="true"
+                  >
+                    <Check size={14} strokeWidth={3} />
+                  </span>
                 </div>
               );
             })}

@@ -281,6 +281,8 @@ export interface Pagination {
 
 // QR Code Types
 export interface QRCodeData {
-  type: 'product' | 'shop';
+  type: 'product' | 'shop' | 'table';
   id: string;
+  shopId?: string;
+  tableNumber?: string;
 }

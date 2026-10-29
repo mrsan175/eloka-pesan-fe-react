@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  MapPin,
   Clock,
   CreditCard,
+  QrCode,
   Plus,
   Minus,
   ArrowLeft,
@@ -24,11 +24,26 @@ const CheckoutPage = () => {
   const [orderType, setOrderType] = useState<
     "DINE_IN" | "TAKEAWAY" | "DELIVERY"
   >("TAKEAWAY");
-  const [tableNumber, setTableNumber] = useState("");
+  const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [pickupTime, setPickupTime] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const storedTable = sessionStorage.getItem("eloka-dine-in-table");
+    if (storedTable) {
+      try {
+        const parsed = JSON.parse(storedTable);
+        if (parsed.shopId === shopId && parsed.tableNumber) {
+          setTableNumber(parsed.tableNumber);
+          setOrderType("DINE_IN");
+        }
+      } catch {
+        sessionStorage.removeItem("eloka-dine-in-table");
+      }
+    }
+  }, [shopId]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -56,8 +71,13 @@ const CheckoutPage = () => {
       return;
     }
 
-    if (orderType === "DINE_IN" && !tableNumber.trim()) {
-      toast.error("Nomor meja harus diisi untuk makan di tempat");
+    if (orderType === "DINE_IN" && !tableNumber) {
+      toast.error("Scan QR meja atau isi nomor meja untuk pesanan dine-in");
+      return;
+    }
+
+    if (orderType === "TAKEAWAY" && !pickupTime) {
+      toast.error("Jadwal pengambilan harus diisi untuk pesanan takeaway");
       return;
     }
 
@@ -82,8 +102,8 @@ const CheckoutPage = () => {
         notes,
       };
 
-      if (orderType === "DINE_IN" && tableNumber.trim()) {
-        orderData.tableNumber = tableNumber.trim();
+      if (orderType === "DINE_IN" && tableNumber) {
+        orderData.tableNumber = tableNumber;
       }
 
       if (orderType === "TAKEAWAY" && pickupTime) {
@@ -95,6 +115,9 @@ const CheckoutPage = () => {
       const order = rawOrder?.order || rawOrder;
 
       clearCart();
+      if (orderType === "DINE_IN") {
+        sessionStorage.removeItem("eloka-dine-in-table");
+      }
       toast.success("Pesanan berhasil dibuat!");
       navigate(`/payment/${order.id}`);
     } catch (error: any) {
@@ -262,14 +285,27 @@ const CheckoutPage = () => {
             </div>
 
             {orderType === "DINE_IN" && (
-              <div className="mt-4">
+              <div className="mt-4 space-y-2.5">
+                <div className="rounded-xl border border-primary-100 bg-primary-50 px-3 py-2.5 text-xs text-primary-700">
+                  {tableNumber
+                    ? `Nomor meja saat ini: ${tableNumber}`
+                    : "Pilih scan QR meja atau isi nomor meja secara manual."}
+                </div>
+                <Button
+                  type="button"
+                  variant={tableNumber ? "outline" : "primary"}
+                  onClick={() => navigate("/scan?returnTo=%2Fcheckout")}
+                  className="w-full"
+                  leftIcon={<QrCode size={17} />}
+                >
+                  {tableNumber ? "Scan Ulang QR Meja" : "Scan QR Meja"}
+                </Button>
                 <Input
-                  label="Nomor Meja"
-                  placeholder="Contoh: Meja 05, A1, B3"
-                  value={tableNumber}
+                  label="Atau Isi Nomor Meja"
+                  placeholder="Contoh: 12"
+                  value={tableNumber || ""}
                   onChange={(e) => setTableNumber(e.target.value)}
-                  leftIcon={<MapPin size={18} />}
-                  required
+                  inputMode="text"
                 />
               </div>
             )}
@@ -277,11 +313,12 @@ const CheckoutPage = () => {
             {orderType === "TAKEAWAY" && (
               <div className="mt-4">
                 <Input
-                  label="Estimasi Jam Pengambilan (Opsional)"
+                  label="Jadwal Pengambilan"
                   type="datetime-local"
                   value={pickupTime}
                   onChange={(e) => setPickupTime(e.target.value)}
                   leftIcon={<Clock size={18} />}
+                  required
                 />
               </div>
             )}

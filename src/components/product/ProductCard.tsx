@@ -85,11 +85,6 @@ const ProductCard = ({ product, shopName }: ProductCardProps) => {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
           />
-          {hasVariantsOrAddons && (
-            <span className="absolute bottom-1.5 left-1.5 bg-slate-900/75 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-              Kustomisasi
-            </span>
-          )}
         </div>
 
         {/* Info: Hanya Nama Menu, Harga & Tombol Tambah */}

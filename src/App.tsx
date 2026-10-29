@@ -12,6 +12,8 @@ import {
   LoginPage,
   RegisterPage,
   SearchPage,
+  TableEntryPage,
+  MapPage,
 } from '@/pages';
 import { ProtectedRoute, GuestRoute } from '@/components/common/ProtectedRoute';
 import CartConflictModal from '@/components/common/CartConflictModal';
@@ -27,6 +29,8 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/shops/:id" element={<ShopDetailPage />} />
         <Route path="/scan" element={<QRScannerPage />} />
+        <Route path="/table" element={<TableEntryPage />} />
+        <Route path="/map" element={<MapPage />} />
 
         {/* Auth Routes (Guest Only) */}
         <Route

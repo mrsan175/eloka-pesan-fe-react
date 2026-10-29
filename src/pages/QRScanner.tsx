@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 import { X, RefreshCw, AlertCircle, Camera } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui';
 import { parseQRCode } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useCartStore } from '@/stores';
 
 const QRScannerPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -45,7 +47,7 @@ const QRScannerPage = () => {
     const parsed = parseQRCode(data);
 
     if (!parsed) {
-      toast.error('QR Code tidak dikenali');
+      toast.error('QR tidak valid. Gunakan QR meja dengan format JSON atau URL Eloka.');
       setTimeout(() => {
         initScanner(facingMode);
       }, 1500);
@@ -55,6 +57,22 @@ const QRScannerPage = () => {
     if (parsed.type === 'shop') {
       toast.success('Outlet ditemukan!');
       navigate(`/shops/${parsed.id}`, { replace: true });
+    } else if (parsed.type === 'table') {
+      const currentShopId = useCartStore.getState().shopId;
+      if (currentShopId && currentShopId !== parsed.shopId) {
+        toast.error('QR meja bukan milik outlet yang sedang dipesan');
+        setTimeout(() => initScanner(facingMode), 1500);
+        return;
+      }
+      sessionStorage.setItem(
+        'eloka-dine-in-table',
+        JSON.stringify({ shopId: parsed.shopId, tableNumber: parsed.tableNumber })
+      );
+      toast.success(`Meja ${parsed.tableNumber} terdeteksi`);
+      const returnTo = searchParams.get('returnTo');
+      navigate(returnTo === '/checkout' ? '/checkout' : `/shops/${parsed.shopId}`, {
+        replace: true,
+      });
     } else if (parsed.type === 'product') {
       toast.success('Produk ditemukan!');
       navigate(`/products/${parsed.id}`, { replace: true });
@@ -209,7 +227,7 @@ const QRScannerPage = () => {
             {isInitializing ? 'Menyiapkan Kamera...' : 'Arahkan ke QR Code'}
           </h2>
           <p className="text-white/70 text-xs max-w-xs mx-auto">
-            Arahkan kamera tepat ke QR Code outlet atau nomor meja Anda
+            Arahkan kamera tepat ke QR Code outlet, meja, atau menu
           </p>
         </div>
       </div>

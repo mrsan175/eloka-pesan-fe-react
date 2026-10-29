@@ -34,11 +34,11 @@ const SearchPage = () => {
   useEffect(() => {
     if (debouncedQuery.trim()) {
       searchShops(debouncedQuery);
-      setSearchParams({ q: debouncedQuery });
+      setSearchParams({ q: debouncedQuery }, { replace: true });
     } else {
       setShops([]);
       setHasSearched(false);
-      setSearchParams({});
+      setSearchParams({}, { replace: true });
     }
   }, [debouncedQuery]);
 
@@ -72,7 +72,7 @@ const SearchPage = () => {
     setQuery('');
     setShops([]);
     setHasSearched(false);
-    setSearchParams({});
+    setSearchParams({}, { replace: true });
   };
 
   const handleRecentSearch = (term: string) => {
@@ -108,7 +108,7 @@ const SearchPage = () => {
         <div className="bg-white border-b border-secondary-200 px-4 pt-safe-top pb-3 sticky top-0 z-30">
           <div className="flex items-center gap-2 pt-3">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               className="p-2 -ml-2 text-secondary-600 hover:text-secondary-900"
             >
               <X size={24} />

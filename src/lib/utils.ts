@@ -171,16 +171,50 @@ export function getOrderStatusLabel(status: string): string {
 /**
  * Parse QR Code data
  */
-export function parseQRCode(data: string): { type: 'product' | 'shop'; id: string } | null {
+export function parseQRCode(data: string):
+  | { type: 'product' | 'shop'; id: string }
+  | { type: 'table'; shopId: string; tableNumber: string }
+  | null {
+  const rawData = data.trim();
+  if (!rawData) return null;
+
   try {
-    const parsed = JSON.parse(data);
-    if (parsed.type && parsed.id) {
-      return parsed;
+    const parsed = JSON.parse(rawData);
+    if (parsed.type === 'table' && parsed.shopId && parsed.tableNumber) {
+      return {
+        type: 'table',
+        shopId: String(parsed.shopId),
+        tableNumber: String(parsed.tableNumber),
+      };
     }
-    return null;
+    if (parsed.type && parsed.id) {
+      return {
+        type: parsed.type,
+        id: String(parsed.id),
+      };
+    }
   } catch {
-    return null;
+    // QR readers may return a URL instead of the raw JSON payload.
   }
+
+  try {
+    const url = new URL(rawData);
+    const type = url.searchParams.get('type');
+    const shopId = url.searchParams.get('shopId') || url.searchParams.get('shop');
+    const tableNumber = url.searchParams.get('tableNumber') || url.searchParams.get('table');
+    const id = url.searchParams.get('id');
+
+    if (type === 'table' && shopId && tableNumber) {
+      return { type: 'table', shopId, tableNumber };
+    }
+    if ((type === 'shop' || type === 'product') && id) {
+      return { type, id };
+    }
+  } catch {
+    // Not a JSON payload or URL.
+  }
+
+  return null;
 }
 
 /**
