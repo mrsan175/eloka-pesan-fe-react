@@ -1,0 +1,18 @@
+# Dependencies installed locally; install them from package-lock.json instead.
+node_modules/
+
+# Local environment files may contain API URLs or credentials.
+.env
+.env.*
+!.env.example
+
+# Vite production output and local preview metadata.
+dist/
+.vercel/
+
+# Local logs, caches, and operating-system metadata.
+*.log
+.npm/
+.DS_Store
+Thumbs.db
+.vercel

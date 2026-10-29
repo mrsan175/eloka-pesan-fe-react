@@ -1,0 +1,11 @@
+export { default as HomePage } from './Home';
+export { default as QRScannerPage } from './QRScanner';
+export { default as ShopDetailPage } from './ShopDetail';
+export { default as CheckoutPage } from './Checkout';
+export { default as PaymentPage } from './Payment';
+export { default as OrderStatusPage } from './OrderStatus';
+export { default as HistoryPage } from './History';
+export { default as ProfilePage } from './Profile';
+export { default as LoginPage } from './Login';
+export { default as RegisterPage } from './Register';
+export { default as SearchPage } from './Search';
