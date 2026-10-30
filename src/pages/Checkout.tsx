@@ -12,13 +12,12 @@ import { Layout } from "@/components/layout";
 import { Card, Button, Input } from "@/components/ui";
 import { useCartStore } from "@/stores";
 import { formatCurrency } from "@/lib/utils";
-import { ordersApi } from "@/lib/api";
 import { toast } from "sonner";
 import type { CreateOrderRequest } from "@/types";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { items, shopId, shopName, updateQuantity, clearCart, getSubtotal } =
+  const { items, shopId, shopName, updateQuantity, getSubtotal } =
     useCartStore();
 
   const [orderType, setOrderType] = useState<
@@ -29,6 +28,7 @@ const CheckoutPage = () => {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
 
   useEffect(() => {
     const storedTable = sessionStorage.getItem("eloka-dine-in-table");
@@ -46,14 +46,14 @@ const CheckoutPage = () => {
   }, [shopId]);
 
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !isOrderSubmitted) {
       if (shopId) {
         navigate(`/shops/${shopId}`, { replace: true });
       } else {
         navigate("/", { replace: true });
       }
     }
-  }, [items.length, navigate, shopId]);
+  }, [items.length, isOrderSubmitted, navigate, shopId]);
 
   const subtotal = getSubtotal();
   const tax = subtotal * 0.1;
@@ -110,16 +110,13 @@ const CheckoutPage = () => {
         orderData.pickupTime = pickupTime;
       }
 
-      const response = await ordersApi.create(orderData);
-      const rawOrder = response.data?.data as any;
-      const order = rawOrder?.order || rawOrder;
-
-      clearCart();
+      sessionStorage.setItem("pendingCheckout", JSON.stringify(orderData));
+      setIsOrderSubmitted(true);
       if (orderType === "DINE_IN") {
         sessionStorage.removeItem("eloka-dine-in-table");
       }
-      toast.success("Pesanan berhasil dibuat!");
-      navigate(`/payment/${order.id}`);
+      toast.success("QRIS siap. Scan QR untuk membuat pesanan.");
+      navigate("/payment/prepare");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Gagal membuat pesanan");
       console.error(error);
@@ -339,6 +336,27 @@ const CheckoutPage = () => {
                 />
               </div>
             )}
+          </Card>
+
+          {/* Payment Method */}
+          <Card className="p-4 sm:p-5 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base mb-3">
+              Metode Pembayaran
+            </h3>
+            <div className="flex items-center gap-3 rounded-2xl border-2 border-primary-500 bg-primary-50/60 p-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-500 text-white">
+                <QrCode size={23} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-slate-900">QRIS</p>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  Scan QRIS setelah pesanan dibuat. Status pembayaran diperbarui realtime.
+                </p>
+              </div>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-500">
+                <span className="h-2 w-2 rounded-full bg-white" />
+              </div>
+            </div>
           </Card>
 
           {/* Notes for Kitchen/Outlet */}

@@ -235,8 +235,8 @@ export interface CreateOrderRequest {
 
 export interface PaymentRequest {
   orderId: string;
-  paymentMethod: 'CREDIT_CARD' | 'DEBIT_CARD' | 'E_WALLET' | 'BANK_TRANSFER' | 'CASH';
-  amount: number;
+  paymentMethod: 'QRIS';
+  amount?: number;
   extraData?: Record<string, unknown>;
 }
 
@@ -246,7 +246,13 @@ export interface PaymentResponse {
   data: {
     transactionId?: string;
     paymentUrl?: string;
-    status: 'PENDING' | 'SUCCESS' | 'FAILED';
+    status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED';
+    orderId?: string;
+    amount?: string;
+    method?: 'QRIS';
+    qrPayload?: string;
+    expiresAt?: string;
+    demo?: string;
   };
 }
 

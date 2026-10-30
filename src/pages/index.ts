@@ -3,6 +3,8 @@ export { default as QRScannerPage } from './QRScanner';
 export { default as ShopDetailPage } from './ShopDetail';
 export { default as CheckoutPage } from './Checkout';
 export { default as PaymentPage } from './Payment';
+export { default as PaymentPreparePage } from './PaymentPrepare';
+export { default as PaymentScanPage } from './PaymentScan';
 export { default as OrderStatusPage } from './OrderStatus';
 export { default as HistoryPage } from './History';
 export { default as ProfilePage } from './Profile';

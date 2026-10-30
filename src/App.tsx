@@ -6,6 +6,8 @@ import {
   ShopDetailPage,
   CheckoutPage,
   PaymentPage,
+  PaymentPreparePage,
+  PaymentScanPage,
   OrderStatusPage,
   HistoryPage,
   ProfilePage,
@@ -15,7 +17,7 @@ import {
   TableEntryPage,
   MapPage,
 } from '@/pages';
-import { ProtectedRoute, GuestRoute } from '@/components/common/ProtectedRoute';
+import { GuestRoute } from '@/components/common/ProtectedRoute';
 import CartConflictModal from '@/components/common/CartConflictModal';
 
 function App() {
@@ -56,20 +58,20 @@ function App() {
           element={<CheckoutPage />}
         />
         <Route
+          path="/payment/prepare"
+          element={<PaymentPreparePage />}
+        />
+        <Route
+          path="/payment/scan"
+          element={<PaymentScanPage />}
+        />
+        <Route
           path="/payment/:orderId"
-          element={
-            <ProtectedRoute>
-              <PaymentPage />
-            </ProtectedRoute>
-          }
+          element={<PaymentPage />}
         />
         <Route
           path="/order-status/:orderId"
-          element={
-            <ProtectedRoute>
-              <OrderStatusPage />
-            </ProtectedRoute>
-          }
+          element={<OrderStatusPage />}
         />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/profile" element={<ProfilePage />} />

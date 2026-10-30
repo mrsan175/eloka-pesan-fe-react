@@ -7,6 +7,8 @@ import type {
   Order,
   CreateOrderRequest,
   PaymentRequest,
+  PaymentResponse,
+  ApiResponse,
   Address,
   Pagination,
 } from '@/types';
@@ -29,6 +31,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    const orderAccessToken = sessionStorage.getItem('orderAccessToken');
+    if (orderAccessToken && config.headers) {
+      config.headers['X-Order-Access-Token'] = orderAccessToken;
     }
     return config;
   },
@@ -172,13 +178,19 @@ export const ordersApi = {
 // Payments API
 export const paymentsApi = {
   create: (data: PaymentRequest) =>
-    apiClient.post<{ data: { transactionId: string; paymentUrl: string; status: string } }>(
+    apiClient.post<ApiResponse<PaymentResponse['data']>>(
       '/payments',
       data
     ),
 
   getStatus: (orderId: string) =>
-    apiClient.get<{ data: { status: string; transactionId?: string } }>(`/payments/${orderId}/status`),
+    apiClient.get<ApiResponse<PaymentResponse['data']>>(`/payments/${orderId}/status`),
+
+  simulateScan: (transactionId: string) =>
+    apiClient.post<ApiResponse<PaymentResponse['data']>>(`/payments/simulate/${transactionId}`),
+
+  eventsUrl: (orderId: string) =>
+    `${API_BASE_URL}/payments/${orderId}/events`,
 
   webhook: (data: unknown) => apiClient.post('/payments/webhook', data),
 };
