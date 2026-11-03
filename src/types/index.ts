@@ -81,19 +81,12 @@ export interface Category {
 }
 
 // Product Types
-export interface ProductVariant {
-  id: string;
-  productId: string;
-  name: string;
-  optionName: string;
-  priceAdjust: string;
-  isAvailable: boolean;
-}
-
 export interface ProductAddon {
   id: string;
   productId: string;
   name: string;
+  category: string;
+  optionName?: string | null;
   price: string;
   isAvailable: boolean;
 }
@@ -110,7 +103,6 @@ export interface Product {
   isPopular: boolean;
   stock?: number;
   order: number;
-  variants: ProductVariant[];
   addons: ProductAddon[];
   category?: Category;
   createdAt: string;
@@ -160,10 +152,6 @@ export interface OrderItem {
   unitPrice: string;
   subtotal: string;
   notes?: string;
-  variants: {
-    id: string;
-    variant: ProductVariant;
-  }[];
   addons: {
     id: string;
     quantity: number;
@@ -225,7 +213,6 @@ export interface CreateOrderRequest {
   items: {
     productId: string;
     quantity: number;
-    variantIds?: string[];
     addonIds?: string[];
     notes?: string;
   }[];

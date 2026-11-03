@@ -95,7 +95,6 @@ const CheckoutPage = () => {
         items: items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
-          variantIds: item.variants.map((v) => v.variantId),
           addonIds: item.addons.map((a) => a.addonId),
           notes: item.notes,
         })),

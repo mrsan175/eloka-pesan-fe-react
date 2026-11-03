@@ -59,25 +59,21 @@ const ProductModal = ({
     }
   }, [isOpen, editItem]);
 
-  // Group variants by name (e.g. Size: Small, Medium, Large)
-  const variantGroups = product.variants?.reduce(
-    (groups, variant) => {
-      if (!groups[variant.name]) {
-        groups[variant.name] = [];
+  const addonGroups = product.addons?.reduce(
+    (groups, addon) => {
+      const category = addon.category || "Topping";
+      if (!groups[category]) {
+        groups[category] = [];
       }
-      groups[variant.name].push(variant);
+      groups[category].push(addon);
       return groups;
     },
-    {} as Record<string, typeof product.variants>,
+    {} as Record<string, typeof product.addons>,
   );
 
   // Calculate total price
   const calculateTotal = () => {
     let basePrice = parseFloat(product.price);
-
-    selectedVariants.forEach((v) => {
-      basePrice += parseFloat(v.priceAdjust);
-    });
 
     let total = basePrice * quantity;
 
@@ -88,34 +84,33 @@ const ProductModal = ({
     return total;
   };
 
-  const handleVariantChange = (
-    groupName: string,
-    variant: (typeof product.variants)[0],
-  ) => {
-    setSelectedVariants((prev) => {
-      const filtered = prev.filter((v) => v.optionName !== groupName);
-      return [
-        ...filtered,
-        {
-          variantId: variant.id,
-          optionName: groupName,
-          priceAdjust: variant.priceAdjust,
-        },
-      ];
-    });
-  };
-
   const handleAddonToggle = (addon: (typeof product.addons)[0]) => {
     setSelectedAddons((prev) => {
       const exists = prev.find((a) => a.addonId === addon.id);
       if (exists) {
         return prev.filter((a) => a.addonId !== addon.id);
       }
+
+      const singleChoiceCategory = ["sugar", "ice"].includes(
+        (addon.category || "").toLowerCase(),
+      );
+      const categoryAddons = product.addons.filter(
+        (item) => item.category === addon.category,
+      );
+      const filtered = singleChoiceCategory
+        ? prev.filter(
+            (item) =>
+              !categoryAddons.some(
+                (categoryAddon) => categoryAddon.id === item.addonId,
+              ),
+          )
+        : prev;
+
       return [
-        ...prev,
+        ...filtered,
         {
           addonId: addon.id,
-          name: addon.name,
+          name: addon.optionName || addon.name,
           price: addon.price,
           quantity: 1,
         },
@@ -214,105 +209,58 @@ const ProductModal = ({
         </div>
       </div>
 
-      {/* Variants Section */}
-      {variantGroups &&
-        Object.entries(variantGroups).map(([groupName, variants]) => (
-          <div key={groupName} className="space-y-2.5">
-            <label className="text-xs sm:text-sm font-bold text-slate-900 block">
-              {groupName} <span className="text-primary-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {variants.map((v) => {
-                const isSelected = selectedVariants.some(
-                  (item) => item.variantId === v.id,
-                );
+      {/* Addons grouped by category */}
+      {addonGroups && Object.entries(addonGroups).map(([category, addons]) => {
+        const isSingleChoice = ["sugar", "ice"].includes(category.toLowerCase());
+        return (
+          <section key={category} className="space-y-3">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900">{category}</h3>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  {isSingleChoice ? "Pilih satu" : "Boleh pilih lebih dari satu"}
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                Opsional
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {addons.map((addon) => {
+                const isSelected = selectedAddons.some((a) => a.addonId === addon.id);
                 return (
                   <button
-                    key={v.id}
+                    key={addon.id}
                     type="button"
-                    onClick={() => handleVariantChange(groupName, v)}
-                    className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+                    onClick={() => handleAddonToggle(addon)}
+                    className={`flex min-h-14 items-center justify-between gap-3 rounded-2xl border p-3 text-left transition-all ${
                       isSelected
-                        ? "border-primary-500 bg-primary-50/70 ring-2 ring-primary-500/20"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
+                        ? "border-primary-500 bg-primary-50/70 ring-2 ring-primary-500/15"
+                        : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="font-semibold text-xs sm:text-sm text-slate-800">
-                        {v.optionName}
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-bold text-slate-800 sm:text-sm">
+                        {addon.optionName || addon.name}
                       </span>
-                      {isSelected && (
-                        <Check
-                          size={14}
-                          className="text-primary-600 flex-shrink-0"
-                        />
-                      )}
-                    </div>
-                    {parseFloat(v.priceAdjust) > 0 && (
-                      <span className="text-xs text-primary-600 font-bold mt-1">
-                        +{formatCurrency(v.priceAdjust)}
+                      <span className="mt-0.5 block text-xs font-bold text-primary-600">
+                        {Number(addon.price) > 0 ? `+${formatCurrency(addon.price)}` : "Gratis"}
                       </span>
-                    )}
+                    </span>
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                      isSelected
+                        ? "border-primary-500 bg-primary-500 text-white"
+                        : "border-slate-300 text-transparent"
+                    }`}>
+                      <Check size={14} strokeWidth={3} />
+                    </span>
                   </button>
                 );
               })}
             </div>
-          </div>
-        ))}
-
-      {/* Addons Section (each option can be selected once; multiple options are allowed) */}
-      {product.addons && product.addons.length > 0 && (
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <label className="text-xs sm:text-sm font-bold text-slate-900">
-              Tambahan / Topping (Opsional)
-            </label>
-            <span className="text-[11px] text-slate-400">
-              Pilih satu atau beberapa
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {product.addons.map((addon) => {
-              const isSelected = selectedAddons.some(
-                (a) => a.addonId === addon.id,
-              );
-
-              return (
-                <div
-                  key={addon.id}
-                  onClick={() => handleAddonToggle(addon)}
-                  className={`w-full p-3 rounded-2xl border flex items-center justify-between text-left transition-all cursor-pointer ${
-                    isSelected
-                      ? "border-primary-500 bg-primary-50/70"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <span className="font-semibold text-xs sm:text-sm text-slate-800 block">
-                      {addon.name}
-                    </span>
-                    <span className="text-xs text-primary-600 font-bold">
-                      +{formatCurrency(addon.price)}
-                    </span>
-                  </div>
-
-                  <span
-                    className={`w-6 h-6 rounded-md border flex items-center justify-center flex-shrink-0 ${
-                      isSelected
-                        ? "border-primary-500 bg-primary-500 text-white"
-                        : "border-slate-300 bg-white text-transparent"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    <Check size={14} strokeWidth={3} />
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          </section>
+        );
+      })}
 
       {/* Notes */}
       <div className="space-y-2">

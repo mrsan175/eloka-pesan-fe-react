@@ -23,9 +23,7 @@ const ProductCard = ({ product, shopName }: ProductCardProps) => {
   const quantity = useCartStore((state) => state.getProductQuantity(product.id));
   const getItemsByProduct = useCartStore((state) => state.getItemsByProduct);
 
-  const hasVariantsOrAddons =
-    (product.variants && product.variants.length > 0) ||
-    (product.addons && product.addons.length > 0);
+  const hasVariantsOrAddons = product.addons && product.addons.length > 0;
 
   const existingItems = getItemsByProduct(product.id);
 
