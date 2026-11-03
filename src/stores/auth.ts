@@ -1,6 +1,9 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import type { User } from '@/types';
+
+localStorage.removeItem('accessToken');
+localStorage.removeItem('refreshToken');
 
 interface AuthState {
   user: User | null;
@@ -39,9 +42,8 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       login: (user, accessToken, refreshToken) => {
-        // Store tokens in localStorage for API interceptor
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
+        sessionStorage.setItem('accessToken', accessToken);
+        sessionStorage.setItem('refreshToken', refreshToken);
 
         set({
           user,
@@ -53,9 +55,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // Clear tokens from localStorage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
 
         set({
           user: null,
@@ -72,10 +73,11 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        accessToken: null,
+        refreshToken: null,
         isAuthenticated: state.isAuthenticated,
       }),
+      storage: createJSONStorage(() => sessionStorage),
     }
   )
 );

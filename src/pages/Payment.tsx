@@ -76,7 +76,7 @@ const PaymentPage = () => {
   useEffect(() => {
     if (!orderId || !payment?.transactionId || payment.status === 'PAID') return;
     const controller = new AbortController();
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     const stream = async () => {
       try {
         const response = await fetch(paymentsApi.eventsUrl(orderId), {
