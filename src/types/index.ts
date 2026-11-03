@@ -86,6 +86,12 @@ export interface ProductAddon {
   productId: string;
   name: string;
   category: string;
+  addonCategoryId?: string;
+  addonCategory?: {
+    id: string;
+    name: string;
+    selectionMode: 'SINGLE' | 'MULTIPLE';
+  };
   selectionMode?: 'SINGLE' | 'MULTIPLE';
   price: string;
   isAvailable: boolean;
