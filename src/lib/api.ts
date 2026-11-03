@@ -166,6 +166,9 @@ export const ordersApi = {
   getById: (id: string) =>
     apiClient.get<{ data: Order | { order: Order } }>(`/orders/${id}`),
 
+  getPublicStatus: (id: string) =>
+    apiClient.get<{ data: Order }>(`/orders/${id}/status`),
+
   getMyOrders: (params?: { page?: number; limit?: number; status?: string }) =>
     apiClient.get<{ data: Order[] | { orders: Order[]; pagination?: Pagination }; meta?: Pagination }>(
       '/orders/my-orders',

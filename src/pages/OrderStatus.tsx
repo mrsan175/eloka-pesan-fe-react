@@ -30,7 +30,7 @@ const OrderStatusPage = () => {
   const fetchOrder = async (id: string, silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const response = await ordersApi.getById(id);
+      const response = await ordersApi.getPublicStatus(id);
       const rawOrder = response.data?.data as any;
       setOrder(rawOrder?.order || rawOrder);
     } catch (error) {
