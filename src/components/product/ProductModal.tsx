@@ -107,7 +107,7 @@ const ProductModal = ({
         ...filtered,
         {
           addonId: addon.id,
-          name: addon.optionName || addon.name,
+          name: addon.name,
           price: addon.price,
           quantity: 1,
         },
@@ -238,7 +238,7 @@ const ProductModal = ({
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-xs font-bold text-slate-800 sm:text-sm">
-                        {addon.optionName || addon.name}
+                        {addon.name}
                       </span>
                       <span className="mt-0.5 block text-xs font-bold text-primary-600">
                         {Number(addon.price) > 0 ? `+${formatCurrency(addon.price)}` : "Gratis"}
