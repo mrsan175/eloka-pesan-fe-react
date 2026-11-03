@@ -91,13 +91,10 @@ const ProductModal = ({
         return prev.filter((a) => a.addonId !== addon.id);
       }
 
-      const singleChoiceCategory = ["sugar", "ice"].includes(
-        (addon.category || "").toLowerCase(),
-      );
       const categoryAddons = product.addons.filter(
         (item) => item.category === addon.category,
       );
-      const filtered = singleChoiceCategory
+      const filtered = addon.selectionMode === "SINGLE"
         ? prev.filter(
             (item) =>
               !categoryAddons.some(
@@ -211,7 +208,7 @@ const ProductModal = ({
 
       {/* Addons grouped by category */}
       {addonGroups && Object.entries(addonGroups).map(([category, addons]) => {
-        const isSingleChoice = ["sugar", "ice"].includes(category.toLowerCase());
+        const isSingleChoice = addons.some((addon) => addon.selectionMode === "SINGLE");
         return (
           <section key={category} className="space-y-3">
             <div className="flex items-end justify-between gap-3">
