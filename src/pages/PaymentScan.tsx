@@ -4,6 +4,7 @@ import { CheckCircle2, QrCode } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Card, Button, Spinner } from '@/components/ui';
 import { ordersApi, paymentsApi } from '@/lib/api';
+import { useCartStore } from '@/stores';
 import { toast } from 'sonner';
 import type { CreateOrderRequest } from '@/types';
 
@@ -19,6 +20,7 @@ const decodeCheckout = (data: string | null): CreateOrderRequest | null => {
 const PaymentScanPage = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const clearCart = useCartStore((state) => state.clearCart);
   const checkout = decodeCheckout(params.get('data'));
   const [processing, setProcessing] = useState(false);
   const hasProcessed = useRef(false);
@@ -45,6 +47,8 @@ const PaymentScanPage = () => {
       }
 
       sessionStorage.removeItem('pendingCheckout');
+      sessionStorage.removeItem('eloka-dine-in-table');
+      clearCart();
       toast.success('Pembayaran simulasi berhasil');
       navigate(`/order-status/${order.id}`);
     } catch (error: any) {
